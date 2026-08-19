@@ -3,209 +3,119 @@ import google.generativeai as genai
 
 st.set_page_config(page_title="AD 小幫手", page_icon="💬", layout="centered")
 
-# 現代介面 CSS
+# ── 隱藏 Streamlit 預設元素 ──
 st.markdown("""
 <style>
-/* 整體背景 */
-.stApp { background: #f0f2f6; }
-
-/* 登入頁背景圖 */
-.login-bg {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background-image: url('https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/background.jpg');
-    background-size: cover;
-    background-position: center;
-    z-index: -1;
-}
-.login-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.45);
-    z-index: -1;
-}
-
-/* 隱藏 Streamlit 預設元素 */
 #MainMenu, footer, header { visibility: hidden; }
-
-/* 標題區塊 */
-.chat-header {
-    background: linear-gradient(135deg, #1a73e8, #0d47a1);
-    border-radius: 16px;
-    padding: 20px 24px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    color: white;
-}
-.chat-header-icon { font-size: 32px; }
-.chat-header-title { font-size: 20px; font-weight: 700; margin: 0; }
-.chat-header-sub { font-size: 13px; opacity: 0.85; margin: 4px 0 0; }
-
-/* 提示泡泡區 */
-.bubble-section { margin-bottom: 16px; }
-.bubble-label { font-size: 12px; color: #666; margin-bottom: 8px; font-weight: 500; }
-.bubble-container { display: flex; flex-wrap: wrap; gap: 8px; }
-.bubble-btn {
-    background: white;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 20px;
-    padding: 7px 14px;
-    font-size: 13px;
-    cursor: pointer;
-    color: #1a73e8;
-    font-weight: 500;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-.bubble-btn:hover {
-    background: #e8f0fe;
-    border-color: #1a73e8;
-}
-
-/* 對話泡泡 */
-.stChatMessage { border-radius: 12px !important; }
-
-/* 登入卡片 */
-.login-card {
-    background: white;
-    border-radius: 28px;
-    padding: 48px 44px;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.35);
-    width: 100%;
-    max-width: 400px;
-    margin: 40px auto 0;
-    text-align: center;
-}
-.login-icon { font-size: 56px; margin-bottom: 16px; }
-.login-title { font-size: 26px; font-weight: 800; color: #1a1a1a; margin: 0 0 8px; }
-.login-sub { font-size: 14px; color: #999; margin: 0 0 32px; line-height: 1.6; }
-.login-divider { height: 1px; background: #f0f0f0; margin: 0 0 28px; }
-
-/* 覆蓋 input 樣式 */
-.stTextInput > div > div > input {
-    border: 2px solid #e0e0e0 !important;
-    border-radius: 12px !important;
-    padding: 14px 16px !important;
-    font-size: 15px !important;
-    background: #fafafa !important;
-}
-.stTextInput > div > div > input:focus {
-    border-color: #1a73e8 !important;
-    background: white !important;
-    box-shadow: 0 0 0 3px rgba(26,115,232,0.12) !important;
-}
+.stApp { background: #f7f8fa; }
 </style>
 """, unsafe_allow_html=True)
 
-# 密碼驗證
+# ══════════════════════════════
+# 登入頁面
+# ══════════════════════════════
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
-    import streamlit.components.v1 as components
-
-    # 用 HTML 做全屏登入頁
-    login_html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <meta charset="UTF-8">
+    st.markdown("""
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            min-height: 100vh;
-            background-image: url('https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/background.jpg');
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: system-ui, -apple-system, sans-serif;
-        }
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-        }
-        .card {
-            position: relative;
-            background: white;
-            border-radius: 24px;
-            padding: 48px 44px;
-            width: 380px;
-            text-align: center;
-            box-shadow: 0 24px 64px rgba(0,0,0,0.3);
-        }
-        .icon { font-size: 52px; margin-bottom: 12px; }
-        .title { font-size: 24px; font-weight: 800; color: #1a1a1a; margin-bottom: 6px; }
-        .sub { font-size: 13px; color: #999; margin-bottom: 28px; line-height: 1.6; }
-        .divider { height: 1px; background: #f0f0f0; margin-bottom: 24px; }
-        input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 15px;
-            background: #fafafa;
-            outline: none;
-            margin-bottom: 12px;
-            transition: border-color 0.2s;
-        }
-        input:focus { border-color: #1a73e8; background: white; }
-        button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #1a73e8, #0d47a1);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        button:hover { opacity: 0.9; }
-        .error { color: #e53935; font-size: 13px; margin-top: 10px; display: none; }
-    </style>
-    </head>
-    <body>
-    <div class="overlay"></div>
-    <div class="card">
-        <div class="icon">💬</div>
-        <p class="title">AD 小幫手</p>
-        <p class="sub">ALP BPM 系統與行政流程諮詢助手<br>請輸入密碼以繼續</p>
-        <div class="divider"></div>
-        <input type="password" id="pw" placeholder="🔒  請輸入存取密碼" onkeydown="if(event.key==='Enter') submit()" />
-        <button onclick="submit()">進入系統 →</button>
-        <p class="error" id="err">❌ 密碼錯誤，請重新輸入</p>
-    </div>
-    <script>
-    function submit() {
-        const pw = document.getElementById('pw').value;
-        window.parent.postMessage({type: 'login', password: pw}, '*');
+    .stApp {
+        background-image: url('https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/background.jpg') !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-attachment: fixed !important;
     }
-    </script>
-    </body>
-    </html>
-    """
+    [data-testid="stAppViewContainer"] {
+        background: rgba(0,0,0,0.45) !important;
+    }
+    [data-testid="stMain"] { background: transparent !important; }
+    .block-container {
+        background: transparent !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 90vh;
+        padding-top: 0 !important;
+    }
+    .login-card {
+        background: white;
+        border-radius: 16px;
+        padding: 48px 40px 36px;
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+        margin: 0 auto;
+    }
+    .login-logo { font-size: 48px; margin-bottom: 8px; }
+    .login-title { font-size: 22px; font-weight: 700; color: #202124; margin: 0 0 4px; }
+    .login-sub { font-size: 14px; color: #5f6368; margin: 0 0 28px; }
+    .login-divider { height: 1px; background: #e8eaed; margin: 0 0 24px; }
+    /* input */
+    div[data-testid="stTextInput"] input {
+        border: 1.5px solid #dadce0 !important;
+        border-radius: 8px !important;
+        padding: 13px 16px !important;
+        font-size: 15px !important;
+        background: #fff !important;
+        width: 100% !important;
+        transition: border 0.2s, box-shadow 0.2s !important;
+    }
+    div[data-testid="stTextInput"] input:focus {
+        border-color: #1a73e8 !important;
+        box-shadow: 0 0 0 3px rgba(26,115,232,0.15) !important;
+        outline: none !important;
+    }
+    /* button */
+    div[data-testid="stButton"] button {
+        background: #1a73e8 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 13px 24px !important;
+        font-size: 15px !important;
+        font-weight: 500 !important;
+        width: 100% !important;
+        margin-top: 8px !important;
+        transition: background 0.2s !important;
+    }
+    div[data-testid="stButton"] button:hover {
+        background: #1557b0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-    components.html(login_html, height=600)
+    st.markdown("""
+    <div class="login-card">
+        <div class="login-logo">💬</div>
+        <p class="login-title">AD 小幫手</p>
+        <p class="login-sub">ALP BPM 系統與行政流程諮詢助手</p>
+        <div class="login-divider"></div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # 接收密碼
-    password = st.text_input("pw", type="password", key="hidden_pw", label_visibility="hidden")
-    if password:
-        if password == st.secrets["APP_PASSWORD"]:
-            st.session_state.authenticated = True
-            st.rerun()
-        else:
-            st.error("❌ 密碼錯誤，請重新輸入")
+    with st.container():
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            password = st.text_input(
+                "password",
+                type="password",
+                placeholder="請輸入存取密碼",
+                label_visibility="collapsed"
+            )
+            if st.button("登入", use_container_width=True):
+                if password == st.secrets["APP_PASSWORD"]:
+                    st.session_state.authenticated = True
+                    st.rerun()
+                else:
+                    st.error("密碼錯誤，請重新輸入")
     st.stop()
 
+# ══════════════════════════════
 # System Prompt
+# ══════════════════════════════
 SYSTEM_PROMPT = """
 你是 ALP 公司的 AD 小幫手，專門回答 BPM 系統操作與行政流程相關問題。
 請務必使用繁體中文回答，回答要清楚簡潔。
@@ -333,87 +243,172 @@ SYSTEM_PROMPT = """
 - ○ 擬辦  ◎ 覆核  ◉ 核定
 """
 
+# ══════════════════════════════
+# 引導式提示泡泡定義
+# ══════════════════════════════
+FOLLOW_UP_BUBBLES = {
+    "BPM登入": ["如何設定代理人？", "忘記密碼怎麼辦？", "語言怎麼切換？", "Worklist 在哪裡？"],
+    "採購": ["採購單核決權限是多少？", "WBS Code 怎麼選？", "付款方式有哪些？", "如何撤回採購單？"],
+    "核決": ["一般採購核決？", "物管採購核決？", "請款核決權限？", "合約核決權限？"],
+    "驗收": ["驗收單需要哪些附件？", "驗收單對應規則？", "資產驗收流程？"],
+    "出差": ["出差簽核流程？", "當日來回怎麼申請？", "出差費用如何報銷？"],
+    "代理": ["代理人設定步驟？", "如何取消代理？", "代理期間如何處理任務？"],
+    "default": ["如何登入 BPM？", "採購單怎麼填？", "如何設定代理人？", "出差申請流程？", "核決權限查詢？", "驗收單怎麼開？"],
+}
+
+def get_follow_up(topic_hint="default"):
+    for key in FOLLOW_UP_BUBBLES:
+        if key != "default" and key in topic_hint:
+            return FOLLOW_UP_BUBBLES[key]
+    return FOLLOW_UP_BUBBLES["default"]
+
+# ══════════════════════════════
 # 初始化 Gemini
+# ══════════════════════════════
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 model = genai.GenerativeModel(
     model_name="gemini-3.5-flash-lite",
     system_instruction=SYSTEM_PROMPT
 )
 
-# 標題
-st.markdown("""
-<div class="chat-header">
-    <div class="chat-header-icon">💬</div>
-    <div>
-        <p class="chat-header-title">AD 小幫手</p>
-        <p class="chat-header-sub">有任何 BPM 系統或行政流程的問題，直接問我！</p>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# 初始化
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "chat" not in st.session_state:
     st.session_state.chat = model.start_chat(history=[])
+if "show_bubbles" not in st.session_state:
+    st.session_state.show_bubbles = True
+if "bubble_hint" not in st.session_state:
+    st.session_state.bubble_hint = "default"
 
+# ══════════════════════════════
+# 聊天介面 CSS（Claude 風格）
+# ══════════════════════════════
+st.markdown("""
+<style>
+.stApp { background: #f7f8fa !important; }
+.block-container { max-width: 720px !important; padding: 1.5rem 1rem !important; }
+
+/* 標題 */
+.chat-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+.chat-sub {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 24px;
+}
+
+/* 提示泡泡 */
+.bubble-label {
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 10px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+div[data-testid="stButton"] button {
+    background: white !important;
+    color: #1a73e8 !important;
+    border: 1.5px solid #dadce0 !important;
+    border-radius: 20px !important;
+    padding: 6px 14px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    margin: 2px !important;
+    transition: all 0.15s !important;
+    white-space: nowrap !important;
+}
+div[data-testid="stButton"] button:hover {
+    background: #e8f0fe !important;
+    border-color: #1a73e8 !important;
+}
+
+/* 對話訊息 */
+[data-testid="stChatMessage"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
+}
+[data-testid="stChatMessage"][data-testid*="user"] {
+    background: #e8f0fe !important;
+    border-radius: 18px 18px 4px 18px !important;
+}
+
+/* 輸入框 */
+[data-testid="stChatInput"] textarea {
+    border-radius: 24px !important;
+    border: 1.5px solid #dadce0 !important;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+    background: white !important;
+}
+[data-testid="stChatInput"] textarea:focus {
+    border-color: #1a73e8 !important;
+    box-shadow: 0 0 0 3px rgba(26,115,232,0.1) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ══════════════════════════════
+# 標題
+# ══════════════════════════════
+st.markdown('<p class="chat-title">💬 AD 小幫手</p>', unsafe_allow_html=True)
+st.markdown('<p class="chat-sub">有任何 BPM 系統或行政流程的問題，直接問我！</p>', unsafe_allow_html=True)
+
+# ══════════════════════════════
 # 提示泡泡
-QUICK_QUESTIONS = [
-    "如何登入 BPM？",
-    "採購單怎麼填？",
-    "如何設定代理人？",
-    "一般採購核決權限？",
-    "出差申請流程？",
-    "Reject 和 Return 差別？",
-    "驗收單怎麼開？",
-    "Share Task 如何使用？",
-]
-
-if not st.session_state.messages:
-    st.markdown('<div class="bubble-label">💡 常見問題，點擊即可發問：</div>', unsafe_allow_html=True)
-    cols = st.columns(4)
-    for i, q in enumerate(QUICK_QUESTIONS):
-        with cols[i % 4]:
-            if st.button(q, key=f"quick_{i}", use_container_width=True):
+# ══════════════════════════════
+if st.session_state.show_bubbles:
+    bubbles = get_follow_up(st.session_state.bubble_hint)
+    st.markdown(f'<div class="bubble-label">💡 你可以這樣問：</div>', unsafe_allow_html=True)
+    cols = st.columns(len(bubbles))
+    for i, q in enumerate(bubbles):
+        with cols[i]:
+            if st.button(q, key=f"bubble_{i}_{len(st.session_state.messages)}"):
                 st.session_state.pending_question = q
+                st.session_state.show_bubbles = False
                 st.rerun()
 
-# 處理提示泡泡點擊
-if "pending_question" in st.session_state:
-    prompt = st.session_state.pop("pending_question")
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    with st.chat_message("assistant"):
-        try:
-            response = st.session_state.chat.send_message(prompt)
-            reply = response.text
-            st.markdown(reply)
-            st.session_state.messages.append({"role": "assistant", "content": reply})
-        except Exception as e:
-            if "429" in str(e):
-                st.error("今日問答次數已達上限，請明天再試！")
-            else:
-                st.error(f"錯誤：{str(e)}")
-
-# 顯示歷史訊息
+# ══════════════════════════════
+# 顯示對話歷史
+# ══════════════════════════════
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# 輸入框
-if prompt := st.chat_input("請輸入你的問題..."):
+# ══════════════════════════════
+# 處理發問（泡泡或輸入框）
+# ══════════════════════════════
+def handle_question(prompt):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
     with st.chat_message("assistant"):
-        try:
-            response = st.session_state.chat.send_message(prompt)
-            reply = response.text
-            st.markdown(reply)
-            st.session_state.messages.append({"role": "assistant", "content": reply})
-        except Exception as e:
-            if "429" in str(e):
-                st.error("今日問答次數已達上限，請明天再試！")
-            else:
-                st.error(f"錯誤：{str(e)}")
+        with st.spinner("思考中..."):
+            try:
+                response = st.session_state.chat.send_message(prompt)
+                reply = response.text
+                st.markdown(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                # 根據問題內容決定下一組泡泡
+                hint = prompt
+                st.session_state.bubble_hint = hint
+                st.session_state.show_bubbles = True
+            except Exception as e:
+                if "429" in str(e):
+                    st.error("今日問答次數已達上限，請明天再試！")
+                else:
+                    st.error(f"錯誤：{str(e)}")
+
+if "pending_question" in st.session_state:
+    q = st.session_state.pop("pending_question")
+    handle_question(q)
+    st.rerun()
+
+if prompt := st.chat_input("請輸入你的問題..."):
+    st.session_state.show_bubbles = False
+    handle_question(prompt)
+    st.rerun()
