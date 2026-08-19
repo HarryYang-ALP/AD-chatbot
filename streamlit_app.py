@@ -1,7 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 
-st.set_page_config(page_title="AD 小幫手", page_icon="💬", layout="centered")
+st.set_page_config(page_title="AD BPM 小幫手", page_icon="💬", layout="centered")
 
 # 密碼驗證
 if "authenticated" not in st.session_state:
