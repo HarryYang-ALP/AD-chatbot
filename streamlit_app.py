@@ -84,7 +84,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:
 .msg-row.user{{justify-content:flex-end}}
 .msg-avatar{{
   width:30px;height:30px;border-radius:50%;
-  background:#e8f0fe;display:flex;align-items:center;
+  background:white;border:1px solid #e8eaed;display:flex;align-items:center;
   justify-content:center;flex-shrink:0;overflow:hidden;
 }}
 .msg-avatar img{{width:18px;height:auto;object-fit:contain}}
