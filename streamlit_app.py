@@ -54,32 +54,31 @@ st.markdown("""
 /* 登入卡片 */
 .login-card {
     background: white;
-    border-radius: 24px;
-    padding: 40px 36px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-    max-width: 420px;
-    margin: 80px auto 0;
+    border-radius: 28px;
+    padding: 48px 44px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+    width: 100%;
+    max-width: 400px;
+    margin: 60px auto 0;
     text-align: center;
 }
-.login-icon {
-    font-size: 52px;
-    margin-bottom: 12px;
+.login-icon { font-size: 56px; margin-bottom: 16px; }
+.login-title { font-size: 26px; font-weight: 800; color: #1a1a1a; margin: 0 0 8px; }
+.login-sub { font-size: 14px; color: #999; margin: 0 0 32px; line-height: 1.6; }
+.login-divider { height: 1px; background: #f0f0f0; margin: 0 0 28px; }
+
+/* 覆蓋 input 樣式 */
+.stTextInput > div > div > input {
+    border: 2px solid #e0e0e0 !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    font-size: 15px !important;
+    background: #fafafa !important;
 }
-.login-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin: 0 0 6px;
-}
-.login-sub {
-    font-size: 14px;
-    color: #888;
-    margin: 0 0 28px;
-}
-.login-divider {
-    height: 1px;
-    background: #f0f0f0;
-    margin: 24px 0;
+.stTextInput > div > div > input:focus {
+    border-color: #1a73e8 !important;
+    background: white !important;
+    box-shadow: 0 0 0 3px rgba(26,115,232,0.12) !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -93,25 +92,23 @@ if not st.session_state.authenticated:
     <div class="login-card">
         <div class="login-icon">💬</div>
         <p class="login-title">AD 小幫手</p>
-        <p class="login-sub">ALP BPM 系統與行政流程諮詢助手</p>
+        <p class="login-sub">ALP BPM 系統與行政流程諮詢助手<br>請輸入密碼以繼續</p>
         <div class="login-divider"></div>
     </div>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 3, 1])
-    with col2:
-        password = st.text_input(
-            "存取密碼",
-            type="password",
-            placeholder="請輸入密碼",
-            label_visibility="collapsed"
-        )
-        if st.button("進入系統 →", use_container_width=True, type="primary"):
-            if password == st.secrets["APP_PASSWORD"]:
-                st.session_state.authenticated = True
-                st.rerun()
-            else:
-                st.error("密碼錯誤，請重新輸入")
+    password = st.text_input(
+        "存取密碼",
+        type="password",
+        placeholder="🔒  請輸入存取密碼",
+        label_visibility="collapsed"
+    )
+    if st.button("進入系統 →", use_container_width=True, type="primary"):
+        if password == st.secrets["APP_PASSWORD"]:
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("❌ 密碼錯誤，請重新輸入")
     st.stop()
 
 # System Prompt
