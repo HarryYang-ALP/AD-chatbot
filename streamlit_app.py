@@ -106,24 +106,98 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
-    st.markdown("""
-    <div class="login-bg"></div>
-    <div class="login-overlay"></div>
-    <div class="login-card">
-        <div class="login-icon">💬</div>
-        <p class="login-title">AD 小幫手</p>
-        <p class="login-sub">ALP BPM 系統與行政流程諮詢助手<br>請輸入密碼以繼續</p>
-        <div class="login-divider"></div>
-    </div>
-    """, unsafe_allow_html=True)
+    import streamlit.components.v1 as components
 
-    password = st.text_input(
-        "存取密碼",
-        type="password",
-        placeholder="🔒  請輸入存取密碼",
-        label_visibility="collapsed"
-    )
-    if st.button("進入系統 →", use_container_width=True, type="primary"):
+    # 用 HTML 做全屏登入頁
+    login_html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            background-image: url('https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/background.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+        }
+        .card {
+            position: relative;
+            background: white;
+            border-radius: 24px;
+            padding: 48px 44px;
+            width: 380px;
+            text-align: center;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+        }
+        .icon { font-size: 52px; margin-bottom: 12px; }
+        .title { font-size: 24px; font-weight: 800; color: #1a1a1a; margin-bottom: 6px; }
+        .sub { font-size: 13px; color: #999; margin-bottom: 28px; line-height: 1.6; }
+        .divider { height: 1px; background: #f0f0f0; margin-bottom: 24px; }
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            background: #fafafa;
+            outline: none;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: #1a73e8; background: white; }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        .error { color: #e53935; font-size: 13px; margin-top: 10px; display: none; }
+    </style>
+    </head>
+    <body>
+    <div class="overlay"></div>
+    <div class="card">
+        <div class="icon">💬</div>
+        <p class="title">AD 小幫手</p>
+        <p class="sub">ALP BPM 系統與行政流程諮詢助手<br>請輸入密碼以繼續</p>
+        <div class="divider"></div>
+        <input type="password" id="pw" placeholder="🔒  請輸入存取密碼" onkeydown="if(event.key==='Enter') submit()" />
+        <button onclick="submit()">進入系統 →</button>
+        <p class="error" id="err">❌ 密碼錯誤，請重新輸入</p>
+    </div>
+    <script>
+    function submit() {
+        const pw = document.getElementById('pw').value;
+        window.parent.postMessage({type: 'login', password: pw}, '*');
+    }
+    </script>
+    </body>
+    </html>
+    """
+
+    components.html(login_html, height=600)
+
+    # 接收密碼
+    password = st.text_input("pw", type="password", key="hidden_pw", label_visibility="hidden")
+    if password:
         if password == st.secrets["APP_PASSWORD"]:
             st.session_state.authenticated = True
             st.rerun()
