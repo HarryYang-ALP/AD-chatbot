@@ -9,6 +9,24 @@ st.markdown("""
 /* 整體背景 */
 .stApp { background: #f0f2f6; }
 
+/* 登入頁背景圖 */
+.login-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-image: url('https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/background.jpg');
+    background-size: cover;
+    background-position: center;
+    z-index: -1;
+}
+.login-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.45);
+    z-index: -1;
+}
+
 /* 隱藏 Streamlit 預設元素 */
 #MainMenu, footer, header { visibility: hidden; }
 
@@ -56,10 +74,10 @@ st.markdown("""
     background: white;
     border-radius: 28px;
     padding: 48px 44px;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.35);
     width: 100%;
     max-width: 400px;
-    margin: 60px auto 0;
+    margin: 40px auto 0;
     text-align: center;
 }
 .login-icon { font-size: 56px; margin-bottom: 16px; }
@@ -89,6 +107,8 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state.authenticated:
     st.markdown("""
+    <div class="login-bg"></div>
+    <div class="login-overlay"></div>
     <div class="login-card">
         <div class="login-icon">💬</div>
         <p class="login-title">AD 小幫手</p>
