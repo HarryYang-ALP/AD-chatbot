@@ -200,7 +200,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:
 <script>
 const CORRECT_PW = "{APP_PASSWORD}";
 const API_KEY = "{GEMINI_API_KEY}";
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=" + API_KEY;
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=" + API_KEY;
 
 const SYSTEM_PROMPT = `你是 ALP 公司的 AD 小幫手，專門回答 BPM 系統操作與行政流程相關問題。
 請務必使用繁體中文回答，回答要清楚簡潔。
