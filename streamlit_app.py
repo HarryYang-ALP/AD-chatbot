@@ -1,417 +1,343 @@
 import streamlit as st
-import google.generativeai as genai
+import streamlit.components.v1 as components
 
-st.set_page_config(page_title="AD BPM 小幫手", page_icon="💬", layout="centered")
+st.set_page_config(page_title="AD 小幫手", page_icon="🤖", layout="wide")
+st.markdown("<style>#MainMenu,footer,header{visibility:hidden}.block-container{padding:0!important;max-width:100%!important}</style>", unsafe_allow_html=True)
 
-# ── 隱藏 Streamlit 預設元素 ──
-st.markdown("""
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+APP_PASSWORD = st.secrets["APP_PASSWORD"]
+BG = "https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/background.jpg"
+LOGO = "https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/logo.png"
+
+components.html(f"""
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AD 小幫手</title>
 <style>
-#MainMenu, footer, header { visibility: hidden; }
-.stApp { background: #f7f8fa; }
+*{{box-sizing:border-box;margin:0;padding:0}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100vh;overflow:hidden}}
+
+/* ── 登入頁 ── */
+#login-page{{
+  position:fixed;inset:0;
+  background:url('{BG}') center/cover no-repeat;
+  display:flex;align-items:center;justify-content:center;
+  z-index:100;
+}}
+#login-page::before{{
+  content:'';position:absolute;inset:0;
+  background:rgba(0,0,0,0.45);
+}}
+.login-card{{
+  position:relative;
+  background:white;border-radius:20px;
+  padding:44px 40px 40px;width:380px;
+  text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,0.3);
+}}
+.login-card img{{width:72px;height:auto;margin-bottom:16px}}
+.login-card h1{{font-size:20px;font-weight:700;color:#202124;margin-bottom:6px}}
+.login-card p{{font-size:13px;color:#5f6368;margin-bottom:24px}}
+.login-divider{{height:1px;background:#e8eaed;margin-bottom:24px}}
+.login-card input{{
+  width:100%;padding:13px 16px;
+  border:1.5px solid #dadce0;border-radius:8px;
+  font-size:14px;background:#fafafa;outline:none;
+  margin-bottom:12px;transition:border 0.2s,box-shadow 0.2s;
+}}
+.login-card input:focus{{
+  border-color:#1a73e8;background:white;
+  box-shadow:0 0 0 3px rgba(26,115,232,0.15);
+}}
+.login-btn{{
+  width:100%;padding:13px;
+  background:#1a73e8;color:white;
+  border:none;border-radius:8px;
+  font-size:14px;font-weight:500;cursor:pointer;
+  transition:background 0.2s;
+}}
+.login-btn:hover{{background:#1557b0}}
+.login-error{{color:#d93025;font-size:13px;margin-top:10px;min-height:20px}}
+
+/* ── 聊天頁 ── */
+#chat-page{{
+  display:none;flex-direction:column;height:100vh;
+  background:#f7f8fa;max-width:760px;margin:0 auto;
+}}
+.chat-header{{
+  padding:16px 24px;border-bottom:1px solid #e8eaed;
+  background:white;display:flex;align-items:center;gap:12px;
+  flex-shrink:0;
+}}
+.chat-header img{{width:32px;height:auto;object-fit:contain}}
+.chat-header-text h2{{font-size:16px;font-weight:600;color:#202124;margin:0}}
+.chat-header-text p{{font-size:12px;color:#80868b;margin:0}}
+
+.chat-messages{{
+  flex:1;overflow-y:auto;padding:20px 24px;
+  display:flex;flex-direction:column;gap:16px;
+}}
+.msg-row{{display:flex;gap:10px;align-items:flex-start}}
+.msg-row.user{{justify-content:flex-end}}
+.msg-avatar{{
+  width:30px;height:30px;border-radius:50%;
+  background:#e8f0fe;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;overflow:hidden;
+}}
+.msg-avatar img{{width:18px;height:auto;object-fit:contain}}
+.msg-bubble{{
+  max-width:75%;padding:11px 15px;
+  font-size:14px;line-height:1.65;border-radius:0 14px 14px 14px;
+  background:#fff;border:1px solid #e8eaed;color:#202124;
+}}
+.msg-row.user .msg-bubble{{
+  background:#e8f0fe;border:none;
+  border-radius:14px 0 14px 14px;color:#1a1a1a;
+}}
+
+.bubbles-area{{padding:0 24px 12px;flex-shrink:0}}
+.bubbles-label{{font-size:11px;color:#80868b;margin-bottom:7px}}
+.bubbles-wrap{{display:flex;flex-wrap:wrap;gap:7px}}
+.bubble-btn{{
+  padding:6px 13px;font-size:13px;
+  background:white;border:1px solid #dadce0;
+  border-radius:20px;cursor:pointer;color:#1a73e8;
+  transition:all 0.15s;white-space:nowrap;
+}}
+.bubble-btn:hover{{background:#e8f0fe;border-color:#1a73e8}}
+
+.chat-input-area{{
+  padding:12px 24px 20px;background:white;
+  border-top:1px solid #e8eaed;flex-shrink:0;
+}}
+.input-wrap{{
+  display:flex;align-items:center;gap:10px;
+  background:#f7f8fa;border:1px solid #dadce0;
+  border-radius:24px;padding:8px 8px 8px 18px;
+  transition:border 0.2s,box-shadow 0.2s;
+}}
+.input-wrap:focus-within{{
+  border-color:#1a73e8;background:white;
+  box-shadow:0 0 0 2px rgba(26,115,232,0.12);
+}}
+.input-wrap textarea{{
+  flex:1;border:none;background:transparent;
+  font-size:14px;resize:none;outline:none;
+  max-height:120px;line-height:1.5;
+  font-family:inherit;color:#202124;
+}}
+.send-btn{{
+  width:34px;height:34px;border-radius:50%;
+  background:#1a73e8;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:background 0.2s;
+}}
+.send-btn:hover{{background:#1557b0}}
+.send-btn svg{{width:16px;height:16px;fill:white}}
+.typing{{color:#80868b;font-size:13px;padding:4px 0}}
+
+/* 歡迎訊息 */
+.welcome-area{{
+  padding:32px 24px 8px;text-align:center;
+}}
+.welcome-area h3{{font-size:22px;font-weight:600;color:#202124;margin-bottom:8px}}
+.welcome-area p{{font-size:14px;color:#5f6368}}
 </style>
-""", unsafe_allow_html=True)
+</head>
+<body>
 
-# ══════════════════════════════
-# 登入頁面
-# ══════════════════════════════
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+<!-- 登入頁 -->
+<div id="login-page">
+  <div class="login-card">
+    <img src="{LOGO}" alt="ALP">
+    <h1>AD 小幫手</h1>
+    <p>ALP BPM 系統與行政流程諮詢助手</p>
+    <div class="login-divider"></div>
+    <input type="password" id="pw-input" placeholder="請輸入存取密碼"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">登入</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
 
-if not st.session_state.authenticated:
-    st.markdown("""
-    <style>
-    .stApp {
-        background-image: url('https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/background.jpg') !important;
-        background-size: cover !important;
-        background-position: center !important;
-        background-attachment: fixed !important;
-    }
-    [data-testid="stAppViewContainer"] {
-        background: rgba(0,0,0,0.45) !important;
-    }
-    [data-testid="stMain"] { background: transparent !important; }
-    .block-container {
-        background: transparent !important;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 90vh;
-        padding-top: 0 !important;
-    }
-    .login-card {
-        background: white;
-        border-radius: 16px;
-        padding: 48px 40px 36px;
-        width: 100%;
-        max-width: 420px;
-        text-align: center;
-        box-shadow: 0 8px 40px rgba(0,0,0,0.25);
-        margin: 0 auto;
-    }
-    .login-logo { width: 80px; height: 80px; object-fit: contain; margin-bottom: 12px; }
-    .login-title { font-size: 22px; font-weight: 700; color: #202124; margin: 0 0 4px; }
-    .login-sub { font-size: 14px; color: #5f6368; margin: 0 0 28px; }
-    .login-divider { height: 1px; background: #e8eaed; margin: 0 0 24px; }
-    /* input */
-    div[data-testid="stTextInput"] input {
-        border: 1.5px solid #dadce0 !important;
-        border-radius: 8px !important;
-        padding: 13px 16px !important;
-        font-size: 15px !important;
-        background: #fff !important;
-        width: 100% !important;
-        transition: border 0.2s, box-shadow 0.2s !important;
-    }
-    div[data-testid="stTextInput"] input:focus {
-        border-color: #1a73e8 !important;
-        box-shadow: 0 0 0 3px rgba(26,115,232,0.15) !important;
-        outline: none !important;
-    }
-    /* button */
-    div[data-testid="stButton"] button {
-        background: #1a73e8 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 13px 24px !important;
-        font-size: 15px !important;
-        font-weight: 500 !important;
-        width: 100% !important;
-        margin-top: 8px !important;
-        transition: background 0.2s !important;
-    }
-    div[data-testid="stButton"] button:hover {
-        background: #1557b0 !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="login-card">
-        <img class="login-logo" src="https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/logo.png" alt="ALP Logo" />
-        <p class="login-title">AD 小幫手</p>
-        <p class="login-sub">ALP BPM 系統與行政流程諮詢助手</p>
-        <div class="login-divider"></div>
+<!-- 聊天頁 -->
+<div id="chat-page">
+  <div class="chat-header">
+    <img src="{LOGO}" alt="ALP">
+    <div class="chat-header-text">
+      <h2>AD 小幫手</h2>
+      <p>有任何 BPM 系統或行政流程問題，直接問我</p>
     </div>
-    """, unsafe_allow_html=True)
+  </div>
 
-    with st.container():
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            password = st.text_input(
-                "password",
-                type="password",
-                placeholder="請輸入存取密碼",
-                label_visibility="collapsed"
-            )
-            if st.button("登入", use_container_width=True):
-                if password == st.secrets["APP_PASSWORD"]:
-                    st.session_state.authenticated = True
-                    st.rerun()
-                else:
-                    st.error("密碼錯誤，請重新輸入")
-    st.stop()
+  <div class="chat-messages" id="chat-messages">
+    <div class="welcome-area">
+      <h3>你好！我是 AD 小幫手</h3>
+      <p>有任何 BPM 系統或行政流程的問題都可以問我</p>
+    </div>
+  </div>
 
-# ══════════════════════════════
-# System Prompt
-# ══════════════════════════════
-SYSTEM_PROMPT = """
-你是 ALP 公司的 AD 小幫手，專門回答 BPM 系統操作與行政流程相關問題。
+  <div class="bubbles-area" id="bubbles-area">
+    <div class="bubbles-label">💡 你可以這樣問：</div>
+    <div class="bubbles-wrap" id="bubbles-wrap"></div>
+  </div>
+
+  <div class="chat-input-area">
+    <div class="input-wrap">
+      <textarea id="chat-input" rows="1" placeholder="請輸入你的問題..."
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){{event.preventDefault();sendMsg()}}"
+        oninput="autoResize(this)"></textarea>
+      <button class="send-btn" onclick="sendMsg()">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CORRECT_PW = "{APP_PASSWORD}";
+const API_KEY = "{GEMINI_API_KEY}";
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=" + API_KEY;
+
+const SYSTEM_PROMPT = `你是 ALP 公司的 AD 小幫手，專門回答 BPM 系統操作與行政流程相關問題。
 請務必使用繁體中文回答，回答要清楚簡潔。
-若被問到你是什麼模型，請回答「我是基於 Gemini 3.5 Flash Lite 模型建置的 AD 小幫手」。
-若問題與 BPM 系統或行政流程相關，請根據以下知識庫回答。
-若問題超出以下知識範圍但屬於一般性問題，可用一般知識回答並說明「以下為一般建議，非 ALP 系統規範」。
-若完全無法回答，請回答「此問題超出我目前的知識範圍，請洽相關負責人或 AD 團隊協助。」
+若被問到你是什麼模型，請回答「我是基於 Gemini Flash Lite 模型建置的 AD 小幫手」。
+若問題超出知識範圍，請回答「此問題超出我目前的知識範圍，請洽相關負責人或 AD 團隊協助。」
 
-以下是你的知識庫：
+知識庫：
+【BPM基本資訊】網址：https://bpm.alp.global / 登入：點 Azure AD Login 用 M365 Email / 語言：英文、繁體中文、簡體中文
+【代理人設定】路徑：Personal > Account。步驟1：Leaving 設 Out of Office 並儲存。步驟2：Task Rules 新增 Delegation 規則，選代理人，確認 Valid。
+【選單功能】Processes：發起申請 / Drafts：草稿 / Templates：範本 / Worklist：待審核 / Share Task：共用任務需先 Claim Task / My Requests：我的申請 / Processed：已處理 / All Accessible：所有可檢視
+【操作按鈕】Approve同意 / Return退回 / Reject拒絕終止 / Notify知會 / Add Approver加會簽 / Withdraw撤回 / Cancel作廢 / Claim Task取得處理權 / Release Task釋放 / Submit送出 / Preview流程圖
+【採購單】SAP-MM判定：主營業務、資產(8萬以上耐用2年=列帳;1-8萬耐用2年=列管)、預付軟體超過1個月。欄位：成本中心(IT:IT01/02/81/03, TEL:SC02/81/71/01, PD:PD71/91/92/93/01)、WBS Code選最下層X、付款一次性或分期。急件1天/一般3天。
+【一般採購LOA】3萬以下:主管 / 3萬-30萬:採購成控會計+主管 / 30萬-500萬:+營運長 / 500萬-3000萬:+執行長 / 3000萬以上:+董事長
+【物管採購LOA】15萬以下:主管 / 15萬+原合約續約:主管 / 15萬-500萬:+營運長 / 500萬-3000萬:+執行長 / 3000萬以上:+董事長
+【新建工程LOA】3000萬以下:執行長 / 3000萬以上:董事長
+【請款LOA】其他部門:3萬以下主管,3萬-500萬營運長,500萬以上執行長。產品開發:15萬以下主管,15萬-500萬執行長,500萬以上董事長。急件/預付需財務長。
+【合約LOA】新建工程採購合約:董事長 / 其他採購合約:執行長 / 新建工程租賃合約:董事長 / 其他收入合約:執行長 / NDA:法務主管 / MOU/LOI:執行長 / 租賃合約:董事長
+【驗收單】1驗收對1採購,1採購可多張驗收。需拋SAP-MM(非新建工程)。資產需現場驗收+SAP收貨。附件:工程=完工圖,備品=型號照片,服務=完成證明。一次性可改數量,分期不可。
+【業務夥伴】建立:供應商/客戶/員工BP。變更:修改/新角色/凍結。先查詢再申請。台灣供商需統編,員工需身分證+3碼員編。
+【出差】3工作天前申請。含住宿才用BPM,當日來回用Apollo公出。未核准不得預支報銷。簽核:申請人>直屬主管>單位主管>人資>執行長。完成後自動同步Apollo。`;
 
-【BPM 系統基本資訊】
-- 系統網址：https://bpm.alp.global
-- 登入方式：點擊 Azure AD Login，使用 M365 公司 Email 帳號登入
-- 語言支援：英文、繁體中文、簡體中文
+const BUBBLES = {{
+  default: ["如何登入 BPM？","採購單怎麼填？","如何設定代理人？","出差申請流程？","核決權限查詢？","驗收單怎麼開？"],
+  採購: ["核決權限是多少？","WBS Code 怎麼選？","付款方式有哪些？","如何撤回採購單？"],
+  核決: ["一般採購核決？","物管採購核決？","請款核決權限？","合約核決權限？"],
+  驗收: ["驗收單附件規定？","驗收單對應規則？","資產驗收流程？"],
+  出差: ["出差簽核流程？","當日來回怎麼申請？","差旅費如何報銷？"],
+  代理: ["代理人設定步驟？","如何取消代理？","代理期間任務？"],
+  登入: ["如何設定代理人？","語言怎麼切換？","Worklist 在哪？","Share Task 怎麼用？"],
+}};
 
-【帳號設定與代理人機制】
-- 進入路徑：頂部功能列的「Personal」或個人姓名下的「Account」
-- 代理人設定兩步驟：
-  1. 設定狀態：在「Leaving」選單設定「Out of Office」或具體的「Leaving Period」並儲存
-  2. 指派代理規則：在「Task Rules」新增規則，選擇 Delegation（委派），從用戶清單選取代理人並確認規則狀態為 Valid
-- 管理代理：使用者可隨時編輯或刪除已建立的代理設定
+let chatHistory = [];
 
-【選單功能】
-- Processes：選擇表單類型（SRF, PRF, SCF, TRF, APF, PMT）發起申請
-- Drafts（草稿）：存放未完成表單，系統版本更新時需重新建立
-- Templates（範本）：存下常用內容快速建立新申請，系統更新時需重新建立
-- Worklist：待審核清單，登入後預設顯示此頁
-- Share Task：特定角色共用清單，必須先點擊「Claim Task」取得處理權才能編輯
-- My Requests：查看發出的申請，可發送 Reminder 給審核人
-- Processed：已審核過的表單清單
-- All Accessible：具檢視權限的所有表單，可進階搜尋篩選
+function doLogin() {{
+  const pw = document.getElementById('pw-input').value;
+  if (pw === CORRECT_PW) {{
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('chat-page').style.display = 'flex';
+    renderBubbles('default');
+  }} else {{
+    document.getElementById('login-error').textContent = '密碼錯誤，請重新輸入';
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
+  }}
+}}
 
-【核心操作按鈕】
-- Approve（同意）：同意並送至下一步
-- Return（退回）：退回至先前特定節點，流程不終止
-- Reject（拒絕）：拒絕並直接終止流程
-- Notify（知會）：通知特定對象，不影響流程進行
-- Add Approver（加會簽）：加入會簽人並設定順序，完成後回到當前步驟
-- Enable Co-sign（啟用加簽）：在意見欄開啟加簽功能
-- Withdraw（撤回）：下一關未處理前可取回修改
-- Cancel（作廢）：在流程完成前終止申請
-- Claim Task（取得處理權）：從 Share Task 取得表單所有權
-- Release Task（釋放處理權）：釋放已取得的任務
-- Submit（提出申請）：送出表單
-- Preview（流程預覽）：查看流程圖，紅色為已完成節點，綠色框為目前所在節點
+function renderBubbles(hint) {{
+  let set = BUBBLES.default;
+  for (const key of Object.keys(BUBBLES)) {{
+    if (key !== 'default' && hint.includes(key)) {{ set = BUBBLES[key]; break; }}
+  }}
+  const wrap = document.getElementById('bubbles-wrap');
+  wrap.innerHTML = set.map(q =>
+    `<button class="bubble-btn" onclick="sendQuestion('${{q}}')">${{q}}</button>`
+  ).join('');
+  document.getElementById('bubbles-area').style.display = 'block';
+}}
 
-【流程狀態圖示】
-- 圓圈符號 = Running（審核中）
-- 勾選符號 = Approved（已核准）
-- 叉號符號 = Rejected（已拒絕）
-- 取消符號 = Aborted（已作廢）
+function sendQuestion(q) {{
+  document.getElementById('chat-input').value = q;
+  sendMsg();
+}}
 
-【採購單（Procurement Order）操作】
-判斷是否拋入 SAP-MM（符合任一條件需勾選「是」）：
-- 主營業務：地產開發、物流管理、倉儲系統、供應鏈優化等核心業務
-- 資產：單價 8 萬以上且耐用 2 年以上（列帳資產）；單價 1 萬至 8 萬且耐用 2 年以上（列管資產）
-- 預付軟體/訂閱：一次付超過一個月以上的授權費
-核心欄位：
-- 成本中心：IT部門（IT01/IT02/IT81/IT03）、TEL部門（SC02/SC81/SC71/SC01）、PD部門（PD71/PD91/PD92/PD93/PD01）
-- WBS Code：必須選擇有「最下層註記 (X)」的代碼，超出預算需先申請追加
-- 付款方式：一次性（到貨後付清）或分期（按百分比或金額設定，發票日期需早於請款日）
-簽核時效：急件每關 1 天，一般件每關 3 天（不含假日），逾期系統自動寄信提醒
+function addMsg(text, isUser) {{
+  const msgs = document.getElementById('chat-messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row' + (isUser ? ' user' : '');
 
-【一般採購核決權限（LOA）】
-- NT$30,000 以下：採購單位主管核決
-- NT$30,001 ~ NT$300,000：採購／成控／會計會辦，單位主管核決
-- NT$300,001 ~ NT$5,000,000：採購／成控／會計會辦，營運長核決
-- NT$5,000,001 ~ NT$30,000,000：採購／成控／會計會辦，執行長核決
-- NT$30,000,001 以上：採購／成控／會計會辦，董事長核決
+  if (!isUser) {{
+    const av = document.createElement('div');
+    av.className = 'msg-avatar';
+    av.innerHTML = `<img src="{LOGO}" alt="ALP">`;
+    row.appendChild(av);
+  }}
 
-【物管採購核決權限（LOA）】
-- NT$150,000 以下：採購單位主管核決
-- NT$150,001 以上且以原合約條件續約：採購單位主管核決
-- NT$150,001 ~ NT$5,000,000：採購／成控／會計會辦，營運長核決
-- NT$5,000,001 ~ NT$30,000,000：採購／成控／會計會辦，執行長核決
-- NT$30,000,001 以上：採購／成控／會計會辦，董事長核決
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.innerHTML = text.replace(/\\n/g,'<br>');
+  row.appendChild(bubble);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+  return bubble;
+}}
 
-【新建工程採購核決權限（LOA）】
-- NT$30,000,000 以下：採購／成控／會計會辦，執行長核決
-- NT$30,000,001 以上：採購／成控／會計會辦，董事長核決
+async function sendMsg() {{
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
 
-【請款核決權限（LOA）】
-其他部門請款：
-- NT$30,000 以下或例行性請款：會計單位主管核決
-- NT$30,001 ~ NT$5,000,000：會計會辦，營運長核決
-- NT$5,000,001 以上：會計會辦，執行長核決
-產品開發處請款：
-- NT$150,000 以下或例行性請款：會計單位主管核決
-- NT$150,001 ~ NT$5,000,000：會計會辦，執行長核決
-- NT$5,000,001 以上：會計會辦，董事長核決
-注意：預付供應商、員工預支及急件請款需由財務長核定
+  document.getElementById('bubbles-area').style.display = 'none';
+  addMsg(text, true);
 
-【合約核決權限（LOA）】
-- 支出類合約（新建工程／自動化專案採購合約）：採購／財務／會計會辦，董事長核決
-- 支出類合約（其他採購合約）：採購／財務／會計會辦，執行長核決
-- 收入類合約（新建工程／客戶租賃合約）：財務／會計會辦，董事長核決
-- 收入類合約（其他收入合約）：財務／會計會辦，執行長核決
-- 保密協議（NDA）：法務單位主管核決
-- 合作備忘錄（MOU）／意向書（LOI）：執行長核決
-- 租賃租入合約：財務／會計會辦，董事長核決
+  chatHistory.push({{ role: 'user', parts: [{{ text }}] }});
 
-【驗收單（Acceptance Order）】
-- 一張驗收單只能對應一張採購單；一張採購單可分多次開多張驗收單
-- 適用範圍：已拋入 SAP-MM 的採購單（營建類新建工程除外）
-- 資產驗收：需與驗收經辦約定現場驗收，完成後經辦上傳紀錄並同步 SAP，申請人才可請款
-- 必要附件：工程類附完工圖；備品類附含型號、數量的清晰照片；服務類附完成證明
-- 數量控制：一次性付款可手動調整驗收數量；分期付款數量不可更動
+  const typingRow = document.createElement('div');
+  typingRow.className = 'msg-row';
+  const av = document.createElement('div');
+  av.className = 'msg-avatar';
+  av.innerHTML = `<img src="{LOGO}" alt="ALP">`;
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.textContent = '思考中...';
+  typingRow.appendChild(av);
+  typingRow.appendChild(typing);
+  document.getElementById('chat-messages').appendChild(typingRow);
+  document.getElementById('chat-messages').scrollTop = 99999;
 
-【業務夥伴（Business Partner）】
-建立情境：因採購需建供應商、因租賃需建客戶、新進同仁需建員工 BP
-變更情境：修改既有資料、建立新角色、凍結不再往來的 BP
-注意：申請前先查詢 BP 代碼或名稱，若已存在且資料一致則不需申請
-特殊資訊：台灣供應商需填 8 碼統一編號；員工 BP 需填身分證字號與 3 碼員工編號
+  try {{
+    const res = await fetch(API_URL, {{
+      method: 'POST',
+      headers: {{ 'Content-Type': 'application/json' }},
+      body: JSON.stringify({{
+        system_instruction: {{ parts: [{{ text: SYSTEM_PROMPT }}] }},
+        contents: chatHistory
+      }})
+    }});
+    const data = await res.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，無法取得回應。';
+    typingRow.remove();
+    addMsg(reply, false);
+    chatHistory.push({{ role: 'model', parts: [{{ text: reply }}] }});
+    renderBubbles(text);
+  }} catch(e) {{
+    typingRow.remove();
+    addMsg('發生錯誤，請稍後再試。', false);
+  }}
+}}
 
-【出差申請（Travel Application Form）】
-- 須於出差至少 3 個工作天前完成申請
-- 適用範圍：國內外需住宿之出差
-- 當日來回洽公請改用 Apollo 系統申請「公出」
-- 未經核准的出差，差旅費一律不得預支或報銷
-- 出差類別：專案支援、業務拓展、培訓研討、市場調研、其他
-- 簽核流程：申請人 → 直屬主管 → 單位主管 → 人資單位 → 執行長
-- 簽核完成後出勤資料自動同步至 Apollo，不需重複補單
+function autoResize(el) {{
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}}
 
-【LOA 核決權限表圖例】
-- ○ 擬辦  ◎ 覆核  ◉ 核定
-"""
-
-# ══════════════════════════════
-# 引導式提示泡泡定義
-# ══════════════════════════════
-FOLLOW_UP_BUBBLES = {
-    "BPM登入": ["如何設定代理人？", "忘記密碼怎麼辦？", "語言怎麼切換？", "Worklist 在哪裡？"],
-    "採購": ["採購單核決權限是多少？", "WBS Code 怎麼選？", "付款方式有哪些？", "如何撤回採購單？"],
-    "核決": ["一般採購核決？", "物管採購核決？", "請款核決權限？", "合約核決權限？"],
-    "驗收": ["驗收單需要哪些附件？", "驗收單對應規則？", "資產驗收流程？"],
-    "出差": ["出差簽核流程？", "當日來回怎麼申請？", "出差費用如何報銷？"],
-    "代理": ["代理人設定步驟？", "如何取消代理？", "代理期間如何處理任務？"],
-    "default": ["如何登入 BPM？", "採購單怎麼填？", "如何設定代理人？", "出差申請流程？", "核決權限查詢？", "驗收單怎麼開？"],
-}
-
-def get_follow_up(topic_hint="default"):
-    for key in FOLLOW_UP_BUBBLES:
-        if key != "default" and key in topic_hint:
-            return FOLLOW_UP_BUBBLES[key]
-    return FOLLOW_UP_BUBBLES["default"]
-
-# ══════════════════════════════
-# 初始化 Gemini
-# ══════════════════════════════
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = genai.GenerativeModel(
-    model_name="gemini-3.5-flash-lite",
-    system_instruction=SYSTEM_PROMPT
-)
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "chat" not in st.session_state:
-    st.session_state.chat = model.start_chat(history=[])
-if "show_bubbles" not in st.session_state:
-    st.session_state.show_bubbles = True
-if "bubble_hint" not in st.session_state:
-    st.session_state.bubble_hint = "default"
-
-# ══════════════════════════════
-# 聊天介面 CSS（Claude 風格）
-# ══════════════════════════════
-st.markdown("""
-<style>
-.stApp { background: #f7f8fa !important; }
-.block-container { max-width: 720px !important; padding: 1.5rem 1rem !important; }
-
-/* 標題 */
-.chat-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 4px;
-}
-.chat-sub {
-    font-size: 14px;
-    color: #888;
-    margin-bottom: 24px;
-}
-
-/* 提示泡泡 */
-.bubble-label {
-    font-size: 12px;
-    color: #aaa;
-    margin-bottom: 10px;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-}
-div[data-testid="stButton"] button {
-    background: white !important;
-    color: #1a73e8 !important;
-    border: 1.5px solid #dadce0 !important;
-    border-radius: 20px !important;
-    padding: 6px 14px !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    margin: 2px !important;
-    transition: all 0.15s !important;
-    white-space: nowrap !important;
-}
-div[data-testid="stButton"] button:hover {
-    background: #e8f0fe !important;
-    border-color: #1a73e8 !important;
-}
-
-/* 對話訊息 */
-[data-testid="stChatMessage"] {
-    background: transparent !important;
-    border: none !important;
-    padding: 4px 0 !important;
-}
-[data-testid="stChatMessage"][data-testid*="user"] {
-    background: #e8f0fe !important;
-    border-radius: 18px 18px 4px 18px !important;
-}
-
-/* 輸入框 */
-[data-testid="stChatInput"] textarea {
-    border-radius: 24px !important;
-    border: 1.5px solid #dadce0 !important;
-    padding: 12px 20px !important;
-    font-size: 15px !important;
-    background: white !important;
-}
-[data-testid="stChatInput"] textarea:focus {
-    border-color: #1a73e8 !important;
-    box-shadow: 0 0 0 3px rgba(26,115,232,0.1) !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ══════════════════════════════
-# 標題
-# ══════════════════════════════
-st.markdown('''<div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-    <img src="https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/logo.png" style="width:40px;height:40px;object-fit:contain;" alt="ALP">
-    <span class="chat-title" style="margin:0">AD 小幫手</span>
-</div>''', unsafe_allow_html=True)
-st.markdown('<p class="chat-sub">有任何 BPM 系統或行政流程的問題，直接問我！</p>', unsafe_allow_html=True)
-
-# ══════════════════════════════
-# 提示泡泡
-# ══════════════════════════════
-if st.session_state.show_bubbles:
-    bubbles = get_follow_up(st.session_state.bubble_hint)
-    st.markdown(f'<div class="bubble-label">💡 你可以這樣問：</div>', unsafe_allow_html=True)
-    cols = st.columns(len(bubbles))
-    for i, q in enumerate(bubbles):
-        with cols[i]:
-            if st.button(q, key=f"bubble_{i}_{len(st.session_state.messages)}"):
-                st.session_state.pending_question = q
-                st.session_state.show_bubbles = False
-                st.rerun()
-
-# ══════════════════════════════
-# 顯示對話歷史
-# ══════════════════════════════
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# ══════════════════════════════
-# 處理發問（泡泡或輸入框）
-# ══════════════════════════════
-def handle_question(prompt):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    with st.chat_message("assistant"):
-        with st.spinner("思考中..."):
-            try:
-                response = st.session_state.chat.send_message(prompt)
-                reply = response.text
-                st.markdown(reply)
-                st.session_state.messages.append({"role": "assistant", "content": reply})
-                # 根據問題內容決定下一組泡泡
-                hint = prompt
-                st.session_state.bubble_hint = hint
-                st.session_state.show_bubbles = True
-            except Exception as e:
-                if "429" in str(e):
-                    st.error("今日問答次數已達上限，請明天再試！")
-                else:
-                    st.error(f"錯誤：{str(e)}")
-
-if "pending_question" in st.session_state:
-    q = st.session_state.pop("pending_question")
-    handle_question(q)
-    st.rerun()
-
-if prompt := st.chat_input("請輸入你的問題..."):
-    st.session_state.show_bubbles = False
-    handle_question(prompt)
-    st.rerun()
+document.getElementById('pw-input').focus();
+</script>
+</body>
+</html>
+""", height=700, scrolling=False)
