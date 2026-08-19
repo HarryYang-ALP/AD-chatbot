@@ -1,21 +1,117 @@
 import streamlit as st
 import google.generativeai as genai
 
-st.set_page_config(page_title="AD BPM 小幫手", page_icon="💬", layout="centered")
+st.set_page_config(page_title="AD 小幫手", page_icon="💬", layout="centered")
+
+# 現代介面 CSS
+st.markdown("""
+<style>
+/* 整體背景 */
+.stApp { background: #f0f2f6; }
+
+/* 隱藏 Streamlit 預設元素 */
+#MainMenu, footer, header { visibility: hidden; }
+
+/* 標題區塊 */
+.chat-header {
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: white;
+}
+.chat-header-icon { font-size: 32px; }
+.chat-header-title { font-size: 20px; font-weight: 700; margin: 0; }
+.chat-header-sub { font-size: 13px; opacity: 0.85; margin: 4px 0 0; }
+
+/* 提示泡泡區 */
+.bubble-section { margin-bottom: 16px; }
+.bubble-label { font-size: 12px; color: #666; margin-bottom: 8px; font-weight: 500; }
+.bubble-container { display: flex; flex-wrap: wrap; gap: 8px; }
+.bubble-btn {
+    background: white;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #1a73e8;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.bubble-btn:hover {
+    background: #e8f0fe;
+    border-color: #1a73e8;
+}
+
+/* 對話泡泡 */
+.stChatMessage { border-radius: 12px !important; }
+
+/* 登入卡片 */
+.login-card {
+    background: white;
+    border-radius: 24px;
+    padding: 40px 36px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    max-width: 420px;
+    margin: 80px auto 0;
+    text-align: center;
+}
+.login-icon {
+    font-size: 52px;
+    margin-bottom: 12px;
+}
+.login-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 6px;
+}
+.login-sub {
+    font-size: 14px;
+    color: #888;
+    margin: 0 0 28px;
+}
+.login-divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 24px 0;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # 密碼驗證
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
-    st.title("💬 AD BPM 小幫手")
-    password = st.text_input("請輸入密碼", type="password")
-    if st.button("登入"):
-        if password == st.secrets["APP_PASSWORD"]:
-            st.session_state.authenticated = True
-            st.rerun()
-        else:
-            st.error("密碼錯誤，請重新輸入")
+    st.markdown("""
+    <div class="login-card">
+        <div class="login-icon">💬</div>
+        <p class="login-title">AD 小幫手</p>
+        <p class="login-sub">ALP BPM 系統與行政流程諮詢助手</p>
+        <div class="login-divider"></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
+        password = st.text_input(
+            "存取密碼",
+            type="password",
+            placeholder="請輸入密碼",
+            label_visibility="collapsed"
+        )
+        if st.button("進入系統 →", use_container_width=True, type="primary"):
+            if password == st.secrets["APP_PASSWORD"]:
+                st.session_state.authenticated = True
+                st.rerun()
+            else:
+                st.error("密碼錯誤，請重新輸入")
     st.stop()
 
 # System Prompt
@@ -76,12 +172,10 @@ SYSTEM_PROMPT = """
 - 主營業務：地產開發、物流管理、倉儲系統、供應鏈優化等核心業務
 - 資產：單價 8 萬以上且耐用 2 年以上（列帳資產）；單價 1 萬至 8 萬且耐用 2 年以上（列管資產）
 - 預付軟體/訂閱：一次付超過一個月以上的授權費
-
 核心欄位：
 - 成本中心：IT部門（IT01/IT02/IT81/IT03）、TEL部門（SC02/SC81/SC71/SC01）、PD部門（PD71/PD91/PD92/PD93/PD01）
 - WBS Code：必須選擇有「最下層註記 (X)」的代碼，超出預算需先申請追加
 - 付款方式：一次性（到貨後付清）或分期（按百分比或金額設定，發票日期需早於請款日）
-
 簽核時效：急件每關 1 天，一般件每關 3 天（不含假日），逾期系統自動寄信提醒
 
 【一般採購核決權限（LOA）】
@@ -145,9 +239,7 @@ SYSTEM_PROMPT = """
 - 簽核完成後出勤資料自動同步至 Apollo，不需重複補單
 
 【LOA 核決權限表圖例】
-- ○ 擬辦
-- ◎ 覆核
-- ◉ 核定
+- ○ 擬辦  ◎ 覆核  ◉ 核定
 """
 
 # 初始化 Gemini
@@ -157,24 +249,72 @@ model = genai.GenerativeModel(
     system_instruction=SYSTEM_PROMPT
 )
 
-# 聊天介面
-st.title("💬 AD BPM 小幫手")
-st.caption("有任何 BPM 系統或行政流程的問題，直接問我！")
+# 標題
+st.markdown("""
+<div class="chat-header">
+    <div class="chat-header-icon">💬</div>
+    <div>
+        <p class="chat-header-title">AD 小幫手</p>
+        <p class="chat-header-sub">有任何 BPM 系統或行政流程的問題，直接問我！</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
+# 初始化
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "chat" not in st.session_state:
     st.session_state.chat = model.start_chat(history=[])
 
+# 提示泡泡
+QUICK_QUESTIONS = [
+    "如何登入 BPM？",
+    "採購單怎麼填？",
+    "如何設定代理人？",
+    "一般採購核決權限？",
+    "出差申請流程？",
+    "Reject 和 Return 差別？",
+    "驗收單怎麼開？",
+    "Share Task 如何使用？",
+]
+
+if not st.session_state.messages:
+    st.markdown('<div class="bubble-label">💡 常見問題，點擊即可發問：</div>', unsafe_allow_html=True)
+    cols = st.columns(4)
+    for i, q in enumerate(QUICK_QUESTIONS):
+        with cols[i % 4]:
+            if st.button(q, key=f"quick_{i}", use_container_width=True):
+                st.session_state.pending_question = q
+                st.rerun()
+
+# 處理提示泡泡點擊
+if "pending_question" in st.session_state:
+    prompt = st.session_state.pop("pending_question")
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    with st.chat_message("assistant"):
+        try:
+            response = st.session_state.chat.send_message(prompt)
+            reply = response.text
+            st.markdown(reply)
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+        except Exception as e:
+            if "429" in str(e):
+                st.error("今日問答次數已達上限，請明天再試！")
+            else:
+                st.error(f"錯誤：{str(e)}")
+
+# 顯示歷史訊息
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# 輸入框
 if prompt := st.chat_input("請輸入你的問題..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
-
     with st.chat_message("assistant"):
         try:
             response = st.session_state.chat.send_message(prompt)
