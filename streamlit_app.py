@@ -1,7 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 
-st.set_page_config(page_title="AD 小幫手", page_icon="💬", layout="centered")
+st.set_page_config(page_title="AD BPM 小幫手", page_icon="💬", layout="centered")
 
 # ── 隱藏 Streamlit 預設元素 ──
 st.markdown("""
@@ -49,7 +49,7 @@ if not st.session_state.authenticated:
         box-shadow: 0 8px 40px rgba(0,0,0,0.25);
         margin: 0 auto;
     }
-    .login-logo { font-size: 48px; margin-bottom: 8px; }
+    .login-logo { width: 80px; height: 80px; object-fit: contain; margin-bottom: 12px; }
     .login-title { font-size: 22px; font-weight: 700; color: #202124; margin: 0 0 4px; }
     .login-sub { font-size: 14px; color: #5f6368; margin: 0 0 28px; }
     .login-divider { height: 1px; background: #e8eaed; margin: 0 0 24px; }
@@ -89,7 +89,7 @@ if not st.session_state.authenticated:
 
     st.markdown("""
     <div class="login-card">
-        <div class="login-logo">💬</div>
+        <img class="login-logo" src="https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/logo.png" alt="ALP Logo" />
         <p class="login-title">AD 小幫手</p>
         <p class="login-sub">ALP BPM 系統與行政流程諮詢助手</p>
         <div class="login-divider"></div>
@@ -355,7 +355,10 @@ div[data-testid="stButton"] button:hover {
 # ══════════════════════════════
 # 標題
 # ══════════════════════════════
-st.markdown('<p class="chat-title">💬 AD 小幫手</p>', unsafe_allow_html=True)
+st.markdown('''<div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+    <img src="https://raw.githubusercontent.com/HarryYang-ALP/AD-chatbot/main/logo.png" style="width:40px;height:40px;object-fit:contain;" alt="ALP">
+    <span class="chat-title" style="margin:0">AD 小幫手</span>
+</div>''', unsafe_allow_html=True)
 st.markdown('<p class="chat-sub">有任何 BPM 系統或行政流程的問題，直接問我！</p>', unsafe_allow_html=True)
 
 # ══════════════════════════════
