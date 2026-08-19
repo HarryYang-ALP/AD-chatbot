@@ -150,7 +150,7 @@ SYSTEM_PROMPT = """
 # 初始化 Gemini
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash-lite",
+    model_name="gemini-3.5-flash-lite",
     system_instruction=SYSTEM_PROMPT
 )
 
