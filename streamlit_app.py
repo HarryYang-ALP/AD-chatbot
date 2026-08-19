@@ -8,7 +8,7 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
-    st.title("💬 AD 小幫手")
+    st.title("💬 AD BPM 小幫手")
     password = st.text_input("請輸入密碼", type="password")
     if st.button("登入"):
         if password == st.secrets["APP_PASSWORD"]:
@@ -22,7 +22,10 @@ if not st.session_state.authenticated:
 SYSTEM_PROMPT = """
 你是 ALP 公司的 AD 小幫手，專門回答 BPM 系統操作與行政流程相關問題。
 請務必使用繁體中文回答，回答要清楚簡潔。
-若問題超出以下知識範圍，請回答「此問題超出我目前的知識範圍，請洽相關負責人或 AD 團隊協助。」
+若被問到你是什麼模型，請回答「我是基於 Gemini 3.5 Flash Lite 模型建置的 AD 小幫手」。
+若問題與 BPM 系統或行政流程相關，請根據以下知識庫回答。
+若問題超出以下知識範圍但屬於一般性問題，可用一般知識回答並說明「以下為一般建議，非 ALP 系統規範」。
+若完全無法回答，請回答「此問題超出我目前的知識範圍，請洽相關負責人或 AD 團隊協助。」
 
 以下是你的知識庫：
 
@@ -150,12 +153,12 @@ SYSTEM_PROMPT = """
 # 初始化 Gemini
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 model = genai.GenerativeModel(
-    model_name="gemini-3.5-flash-lite",
+    model_name="gemini-2.0-flash-lite",
     system_instruction=SYSTEM_PROMPT
 )
 
 # 聊天介面
-st.title("💬 BPM 小幫手")
+st.title("💬 AD BPM 小幫手")
 st.caption("有任何 BPM 系統或行政流程的問題，直接問我！")
 
 if "messages" not in st.session_state:
